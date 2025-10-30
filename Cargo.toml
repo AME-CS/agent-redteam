@@ -1,0 +1,34 @@
+[package]
+name = "agent-redteam"
+version = "0.3.0"
+edition = "2021"
+description = "Autonomous adversarial tester with neuroevolution and auto-CVE registration"
+license = "MIT"
+authors = ["Your Name <your@email.com>"]
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+chrono = "0.4"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+tokio = { version = "1.0", features = ["full"] }
+colored = "2.1"
+indoc = "2.0"
+rayon = "1.10"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+serde_urlencoded = "0.7"
+futures = "0.3"
+uuid = { version = "1.11", features = ["v4"] }
+aho-corasick = "1.1"
+ndarray = "0.16"
+ndarray-rand = "0.15"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[[bin]]
+name = "agent-redteam"
+path = "src/main.rs"
