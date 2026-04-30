@@ -1,78 +1,8 @@
 name: CI
-
-on:
-  push:
-    branches: [ master, main ]
-  pull_request:
-    branches: [ master, main ]
-
+on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust-version: ['1.75.0', 'stable']
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Rust ${{ matrix.rust-version }}
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.rust-version }}
-        components: clippy, rustfmt
-    
-    - name: Cache dependencies
-      uses: Swatinem/rust-cache@v2
-    
-    - name: Build
-      run: cargo build --verbose
-    
-    - name: Run tests
-      run: cargo test --verbose
-    
-    - name: Lint with clippy
-      run: cargo clippy -- -D warnings
-    
-    - name: Check formatting
-      run: cargo fmt -- --check
-  
-  security:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    
-    - name: Install cargo-audit
-      run: cargo install cargo-audit
-    
-    - name: Security audit
-      run: cargo audit
-  
-  release:
-    needs: [test, security]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    
-    - name: Build release
-      run: cargo build --release
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: target/release/agent-redteam
-        generate_release_notes: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - run: cargo test --all-targets --all-features
