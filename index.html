@@ -70,7 +70,7 @@
         .mesh-bg {
             position: fixed; inset: 0; z-index: -1;
             background: 
-                radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.2), transparent 50%),
+                radial-gradient(circle at 50% 0%, rgba(94, 106, 210, 0.25), transparent 70%),
                 radial-gradient(circle at 0% 100%, rgba(113, 112, 255, 0.08), transparent 40%),
                 radial-gradient(circle at 100% 50%, rgba(94, 106, 210, 0.08), transparent 40%);
             will-change: transform;
@@ -81,8 +81,15 @@
 
         nav {
             position: fixed; top: 0; left: 0; right: 0; height: 80px;
-            display: flex; align-items: center; border-bottom: 1px solid var(--border);
-            background: var(--bg-glass); backdrop-filter: blur(24px); z-index: 1000;
+            display: flex; align-items: center; border-bottom: 1px solid transparent;
+            background: transparent; backdrop-filter: blur(0px); z-index: 1000;
+            box-shadow: none; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        nav.scrolled {
+            background: var(--bg-glass);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border);
         }
 
         .nav-inner { width: 100%; display: flex; justify-content: space-between; align-items: center; }
@@ -158,7 +165,7 @@
 
         .terminal-wrap {
             background: #000; border: 1px solid var(--border); border-radius: var(--radius);
-            margin-top: 80px; box-shadow: 0 50px 100px -20px rgba(0,0,0,1); position: relative;
+            margin-top: 80px; position: relative;
             text-align: left; overflow: hidden;
         }
         .terminal-wrap::after {
@@ -384,10 +391,23 @@
 
     <script>
         // Throttled Scroll & Parallax
-        let lastScrollY = 0;
+        let lastScrollY = window.pageYOffset;
         let ticking = false;
+
+        // Initial nav state
+        const nav = document.querySelector('nav');
+        if (lastScrollY > 20) nav.classList.add('scrolled');
+
         window.addEventListener('scroll', () => {
             lastScrollY = window.pageYOffset;
+            
+            // Nav background toggle
+            if (lastScrollY > 20) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+
             if (!ticking) {
                 window.requestAnimationFrame(() => {
                     document.querySelector('.mesh-bg').style.transform = `translate3d(0, ${lastScrollY * 0.1}px, 0)`;
