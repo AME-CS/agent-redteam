@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent RedTeam — Frontier Adversarial Engineering</title>
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root {
+            --bg: #000212;
+            --bg-glass: rgba(10, 10, 20, 0.8);
+            --brand: #5e6ad2;
+            --accent: #7170ff;
+            --text-main: #f7f8f8;
+            --text-dim: #8a8f98;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(94, 106, 210, 0.3);
+            --font-main: 'Inter', -apple-system, system-ui, sans-serif;
+            --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
+            --radius: 6px;
+        }
+
+        @keyframes noise {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -5%); }
+            20% { transform: translate(-10%, 5%); }
+            30% { transform: translate(5%, -10%); }
+            40% { transform: translate(-5%, 15%); }
+            50% { transform: translate(-10%, 5%); }
+            60% { transform: translate(15%, 0); }
+            70% { transform: translate(0, 10%); }
+            80% { transform: translate(-15%, 0); }
+            90% { transform: translate(10%, 5%); }
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -100%; left: -100%; width: 300%; height: 300%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3%3E");
+            opacity: 0.04; pointer-events: none; z-index: 9999;
+            animation: noise 8s steps(10) infinite;
+        }
+
+        .mesh-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background: 
+                radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.25), transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(113, 112, 255, 0.1), transparent 40%),
+                radial-gradient(circle at 100% 50%, rgba(94, 106, 210, 0.1), transparent 40%);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; height: 80px;
+            display: flex; align-items: center; border-bottom: 1px solid var(--border);
+            background: var(--bg-glass); backdrop-filter: blur(24px); z-index: 1000;
+        }
+
+        .nav-inner { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+
+        .logo { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 12px; letter-spacing: -0.03em; cursor: pointer; }
+
+        .logo-box {
+            width: 32px; height: 32px; background: linear-gradient(135deg, var(--brand), var(--accent));
+            border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(94, 106, 210, 0.4);
+        }
+        .logo-box::after { content: ''; width: 14px; height: 14px; border: 2.5px solid white; border-radius: 2px; transform: rotate(45deg); }
+        .logo-box::before { content: ''; position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; top: 6px; right: 6px; }
+
+        .nav-links { display: flex; gap: 40px; font-size: 14px; font-weight: 500; color: var(--text-dim); }
+        .nav-links a { color: inherit; text-decoration: none; transition: color 0.3s; }
+        .nav-links a:hover { color: var(--text-main); }
+
+        .menu-toggle { display: none; cursor: pointer; flex-direction: column; gap: 4px; }
+        .menu-toggle div { width: 20px; height: 2px; background: var(--text-main); transition: 0.3s; }
+
+        .btn {
+            padding: 10px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid transparent; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--text-main); color: var(--bg); border-color: var(--text-main); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1); }
+        .btn-outline { background: transparent; color: var(--text-main); border-color: var(--border); }
+        .btn-outline:hover { border-color: var(--text-main); background: rgba(255, 255, 255, 0.05); }
+
+        .hero { padding: 240px 0 160px; text-align: center; }
+        .hero-label {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 12px; background: rgba(94, 106, 210, 0.1);
+            border: 1px solid var(--border-glow); border-radius: 4px; font-size: 11px;
+            font-weight: 600; color: var(--accent); margin-bottom: 32px; letter-spacing: 0.05em; text-transform: uppercase;
+        }
+        .hero-label::before {
+            content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(113, 112, 255, 0.7); }
+            70% { transform: scale(1.1); opacity: 0.5; box-shadow: 0 0 0 10px rgba(113, 112, 255, 0); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(113, 112, 255, 0); }
+        }
+        .hero h1 {
+            font-size: clamp(48px, 8vw, 96px); font-weight: 800; letter-spacing: -0.04em; line-height: 0.9;
+            margin-bottom: 32px; background: linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.4));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p { font-size: 20px; color: var(--text-dim); max-width: 640px; margin: 0 auto 48px; line-height: 1.6; }
+
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; padding: 80px 0; }
+        .card {
+            background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 40px; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: ""; position: absolute; inset: 0; 
+            background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        .card:hover::before { opacity: 1; }
+        .card:hover { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.2); transform: translateY(-8px); }
+        .card-span-4 { grid-column: span 4; }
+        .card-span-8 { grid-column: span 8; }
+
+        .terminal-wrap {
+            background: #000; border: 1px solid var(--border); border-radius: var(--radius);
+            margin-top: 80px; box-shadow: 0 50px 100px -20px rgba(0,0,0,1); position: relative;
+            text-align: left; overflow: hidden;
+        }
+        .terminal-wrap::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(94, 106, 210, 0.05), transparent);
+            pointer-events: none; animation: scan 4s linear infinite;
+        }
+
+        .pricing { padding: 120px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .price-card {
+            background: rgba(255,255,255,0.01); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 48px; display: flex; flex-direction: column; transition: all 0.3s ease; cursor: pointer;
+        }
+        .price-card.active, .price-card:hover { border-color: var(--brand); background: rgba(94, 106, 210, 0.05); box-shadow: 0 0 30px rgba(94, 106, 210, 0.1); }
+        .popular-badge {
+            position: absolute; top: 16px; right: 16px; background: var(--brand);
+            color: #fff; font-size: 10px; font-weight: 700; padding: 4px 8px;
+            border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+
+        #command-palette {
+            position: fixed; top: 20%; left: 50%; transform: translateX(-50%); width: 640px;
+            background: #0a0a0f; border: 1px solid var(--brand); border-radius: var(--radius);
+            z-index: 2000; box-shadow: 0 50px 100px rgba(0,0,0,0.9); padding: 24px; display: none;
+        }
+        #palette-input { width: 100%; background: transparent; border: none; color: #fff; font-size: 20px; outline: none; padding-bottom: 12px; border-bottom: 1px solid var(--brand); font-family: var(--font-main); }
+        .palette-item {
+            padding: 12px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-bottom: 8px;
+            font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between;
+        }
+        .palette-item:hover, .palette-item.selected { background: var(--brand); color: #fff; }
+
+        #mutation-graph {
+            width: 100%; height: 240px; border-top: 1px solid var(--border);
+            position: relative; overflow: hidden; background: #000;
+        }
+
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+            z-index: 3000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: #0d1117; border: 1px solid var(--border);
+            border-radius: var(--radius); width: 440px; padding: 40px; box-shadow: 0 50px 100px rgba(0,0,0,1);
+        }
+        input[type="email"] {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            padding: 12px; border-radius: 4px; color: #fff; margin-bottom: 20px; outline: none; font-family: var(--font-main);
+        }
+        input[type="email"]:focus { border-color: var(--brand); }
+
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 64px; }
+            .card-span-4, .card-span-8, .pricing { grid-template-columns: 1fr; }
+            .card-span-4, .card-span-8 { grid-column: span 12; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links, .nav-actions { display: none; }
+            .menu-toggle { display: flex; }
+            .hero { padding: 160px 0 80px; }
+            .hero h1 { font-size: 48px; }
+            .hero p { font-size: 16px; }
+            .terminal-wrap { margin-top: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="mesh-bg"></div>
+    
+    <nav>
+        <div class="container nav-inner">
+            <div class="logo" onclick="window.scrollTo(0,0)">
+                <div class="logo-box"></div>
+                Agent RedTeam
+            </div>
+            <div class="nav-links">
+                <a href="#swarm-section">Swarm</a>
+                <a href="#security-section">Security</a>
+                <a href="#pricing-section">Pricing</a>
+                <a href="https://github.com/agent-redteam/agent-redteam" target="_blank">GitHub</a>
+            </div>
+            <div class="nav-actions">
+                <button class="btn btn-outline" onclick="openModal()" style="margin-right: 12px;">Sign In</button>
+                <button class="btn btn-primary" onclick="openModal()">Get Started</button>
+            </div>
+            <div class="menu-toggle" onclick="toggleMenu()">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <section class="hero reveal active" id="swarm-section">
+            <div class="hero-label">Frontier Autonomous Security</div>
+            <h1>Autonomous Adversarial Engineering.</h1>
+            <p>Evolve your security posture with neuroevolutionary agent swarms that discover zero-days before the world does.</p>
+            <div class="hero-btns">
+                <button class="btn btn-primary" onclick="openModal()" style="padding: 16px 40px; font-size: 16px;">Deploy Your Swarm →</button>
+                <button class="btn btn-outline" onclick="window.location.href='#security-section'" style="padding: 16px 40px; font-size: 16px;">View Technology</button>
+            </div>
+
+            <div class="terminal-wrap reveal active">
+                <div style="height: 40px; background: #0a0a0f; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 16px; gap: 8px;">
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);"></div>
+                    <div style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 1px 1px rgba(255,255,255,0.2);"></div>
+                    <div style="margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); opacity: 0.5;">agent-swarm v2.4.0 (ACTIVE)</div>
+                </div>
+                <div id="terminal-body" style="height: 280px; padding: 32px; font-family: var(--font-mono); font-size: 13px; color: #fff; overflow-y: auto; line-height: 1.8;">
+                    <div style="color: var(--accent); cursor: pointer;" onclick="copyLine(this)">[SYSTEM] Kernel 6.12.0-RT initialized...</div>
+                    <div style="color: var(--accent); cursor: pointer;" onclick="copyLine(this)">[SWARM] Global consciousness connected.</div>
+                    <div style="cursor: pointer;" onclick="copyLine(this)">[NETWORK] Analyzing 10.42.0.0/16 targets...</div>
+                    <div style="opacity: 0.5; cursor: pointer;" onclick="copyLine(this)">[SCAN] Port 443 OPEN [OpenSSL 3.0.7]</div>
+                    <div style="cursor: pointer;" onclick="copyLine(this)">[AGENT-001] Injecting heuristic payload mutation #402...</div>
+                    <div style="color: #00ff00; cursor: pointer;" onclick="copyLine(this)">[SUCCESS] Mutation bypasses filter set ALPHA-9.</div>
+                    <div style="color: #ff3333; cursor: pointer;" onclick="copyLine(this)">[ALERT] Entropy threshold exceeded. zero-day detected.</div>
+                </div>
+                <div style="position: absolute; bottom: 8px; left: 16px; font-size: 10px; color: var(--text-dim); opacity: 0.6; font-family: var(--font-mono);">Press <span style="border: 1px solid var(--border); padding: 2px 4px; border-radius: 3px;">⌘K</span> to explore commands</div>
+                <div id="mutation-graph">
+                    <canvas id="graph-canvas"></canvas>
+                    <div style="position: absolute; top: 12px; right: 12px; font-size: 9px; font-family: var(--font-mono); color: var(--accent); opacity: 0.5;">LIVE_GENETIC_MUTATION_TREE</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="security-section" class="grid">
+            <div class="card card-span-8 reveal">
+                <div class="card-icon" style="width: 40px; height: 40px; border: 2px solid var(--accent); border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <div style="width: 20px; height: 2px; background: var(--accent);"></div>
+                    <div style="width: 2px; height: 20px; background: var(--accent); position: absolute;"></div>
+                </div>
+                <h3>Neuroevolutionary Mutation</h3>
+                <p>Our agents don't just follow scripts. They evolve payloads in real-time using genetic algorithms, learning from every WAF block to find the path of least resistance.</p>
+            </div>
+            <div class="card card-span-4 reveal">
+                <div class="card-icon" style="font-family: var(--font-mono); color: var(--accent); font-weight: 800; font-size: 28px; margin-bottom: 24px;">&lt;/&gt;</div>
+                <h3>Zero-Day Velocity</h3>
+                <p>Discover vulnerabilities at a rate impossible for manual red teams. From discovery to verification in seconds.</p>
+            </div>
+            <div class="card card-span-4 reveal">
+                <div class="card-icon" style="width: 32px; height: 32px; background: var(--accent); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); margin-bottom: 24px;"></div>
+                <h3>Auto-Verification</h3>
+                <p>Every finding is cryptographically verified against your own staging environment before disclosure.</p>
+            </div>
+            <div class="card card-span-8 reveal">
+                <div class="card-icon" style="display: flex; gap: 6px; margin-bottom: 24px;">
+                    <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 2px;"></div>
+                    <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 2px; opacity: 0.6;"></div>
+                    <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 2px; opacity: 0.3;"></div>
+                </div>
+                <h3>Global Agent Mesh</h3>
+                <p>Orchestrate thousands of geographically distributed agents to simulate state-level coordinated attacks against your infrastructure.</p>
+            </div>
+        </section>
+
+        <section id="pricing-section" class="pricing reveal">
+            <div class="price-card" onclick="selectPricing(this)">
+                <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 8px; letter-spacing: 0.1em;">RESEARCHER</div>
+                <div style="font-size: 32px; font-weight: 800; margin-bottom: 24px;">$0<span style="font-size: 14px; font-weight: 400; color: var(--text-dim);">/mo</span></div>
+                <div style="flex-grow: 1;">
+                    <div style="font-size: 14px; margin-bottom: 12px; color: var(--text-dim);">✓ 1 Active Agent</div>
+                    <div style="font-size: 14px; margin-bottom: 12px; color: var(--text-dim);">✓ Public CVE Access</div>
+                </div>
+                <button class="btn btn-outline" style="justify-content: center; margin-top: 32px;" onclick="openModal()">Join Waitlist</button>
+            </div>
+            <div class="price-card active" onclick="selectPricing(this)" style="position: relative;">
+                <div class="popular-badge">Popular</div>
+                <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 8px; letter-spacing: 0.1em;">PRO SWARM</div>
+                <div style="font-size: 32px; font-weight: 800; margin-bottom: 24px;">$499<span style="font-size: 14px; font-weight: 400; color: var(--text-dim);">/mo</span></div>
+                <div style="flex-grow: 1;">
+                    <div style="font-size: 14px; margin-bottom: 12px;">✓ 50 Parallel Agents</div>
+                    <div style="font-size: 14px; margin-bottom: 12px;">✓ Private Disclosure Channel</div>
+                    <div style="font-size: 14px; margin-bottom: 12px;">✓ Custom Payload Training</div>
+                </div>
+                <button class="btn btn-primary" style="justify-content: center; margin-top: 32px;" onclick="openModal()">Start Trial</button>
+            </div>
+            <div class="price-card" onclick="selectPricing(this)">
+                <div style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 8px; letter-spacing: 0.1em;">ENTERPRISE</div>
+                <div style="font-size: 32px; font-weight: 800; margin-bottom: 24px;">Custom</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-size: 14px; margin-bottom: 12px; color: var(--text-dim);">✓ Unlimited Mesh Scaling</div>
+                    <div style="font-size: 14px; margin-bottom: 12px; color: var(--text-dim);">✓ On-Premise Deployment</div>
+                </div>
+                <button class="btn btn-outline" style="justify-content: center; margin-top: 32px;" onclick="openModal()">Contact Sales</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="command-palette">
+        <input type="text" id="palette-input" placeholder="Search commands..." autocomplete="off">
+        <div id="palette-results" style="margin-top: 16px;"></div>
+        <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; color: var(--text-dim); font-size: 10px; display: flex; justify-content: space-between;">
+            <span>↑↓ TO NAVIGATE • ENTER TO RUN</span>
+            <span>ESC TO CLOSE</span>
+        </div>
+    </div>
+
+    <div id="get-started-modal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 style="margin-bottom: 12px; font-size: 24px;">Initialize Your Swarm</h2>
+            <p style="color: var(--text-dim); margin-bottom: 32px; font-size: 14px;">Deploy private adversarial infrastructure in seconds.</p>
+            <form id="provision-form" onsubmit="handleProvision(event)">
+                <input type="email" placeholder="name@company.com" required id="provision-email">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px;">Deploy Infrastructure</button>
+            </form>
+            <div id="provision-status" style="margin-top: 24px; font-family: var(--font-mono); font-size: 11px; line-height: 1.6; display: none;"></div>
+        </div>
+    </div>
+
+    <footer style="padding: 80px 0; border-top: 1px solid var(--border); margin-top: 120px;">
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: var(--text-dim); font-size: 13px;">© 2026 Agent RedTeam. Precision Adversarial Engineering.</div>
+            <div style="display: flex; gap: 32px; font-size: 13px;">
+                <a href="#" style="color: var(--text-dim); text-decoration: none;">Security Protocol</a>
+                <a href="#" style="color: var(--text-dim); text-decoration: none;">Privacy</a>
+                <a href="#" style="color: var(--text-dim); text-decoration: none;">Network Status</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            document.querySelector('.mesh-bg').style.transform = `translateY(${scrolled * 0.1}px)`;
+        });
+
+        // Reveal Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Card Spotlight Logic
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // Terminal Log
+        const term = document.getElementById('terminal-body');
+        const logs = [
+            "[INFO] Synchronizing genetic pool...",
+            "[AGENT-092] Port 8080 timeout. Retrying...",
+            "[MUTATION] Payload V2.1 bypassed Cloudflare WAF.",
+            "[CVE] Potential hit in kernel/signal.c:421. verifying...",
+            "[SWARM] New payloads deployed to 42 agents.",
+            "[SYSTEM] Evolution cycle #882 complete."
+        ];
+
+        function copyLine(el) {
+            const text = el.textContent;
+            navigator.clipboard.writeText(text);
+            const originalText = text;
+            el.textContent = 'Copied to clipboard!';
+            el.style.color = '#00ff00';
+            setTimeout(() => {
+                el.textContent = originalText;
+                el.style.color = el.getAttribute('data-original-color') || '#fff';
+            }, 1000);
+        }
+
+        async function addLog(text, color = '#fff') {
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.style.cursor = 'pointer';
+            div.setAttribute('data-original-color', color);
+            div.onclick = function() { copyLine(this); };
+            term.appendChild(div);
+            
+            // Typing effect
+            for(let i=0; i <= text.length; i++) {
+                div.textContent = text.substring(0, i);
+                term.scrollTop = term.scrollHeight;
+                await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+            }
+
+            if(term.childNodes.length > 25) term.removeChild(term.firstChild);
+        }
+        setInterval(() => addLog(logs[Math.floor(Math.random() * logs.length)], Math.random()>0.8 ? '#00ff00':'#fff'), 6000);
+
+        // Palette Logic
+        const cp = document.getElementById('command-palette');
+        const cpInput = document.getElementById('palette-input');
+        const cpResults = document.getElementById('palette-results');
+        const commands = [
+            { id: 'deploy', label: 'Deploy Adversarial Swarm', hint: 'swarm --deploy' },
+            { id: 'report', label: 'Generate Mutation Report', hint: 'swarm --report' },
+            { id: 'scan', label: 'Scan Infrastructure Subnet', hint: 'nmap -sV' },
+            { id: 'nodes', label: 'View Node Topology', hint: 'swarm --topology' },
+            { id: 'pricing', label: 'Switch to Enterprise Plan', hint: 'nav --pricing' },
+            { id: 'clear', label: 'Clear Terminal Output', hint: 'clear' }
+        ];
+        let selectedIdx = 0;
+        let filteredCommands = [...commands];
+
+        function renderPalette() {
+            cpResults.innerHTML = filteredCommands.map((cmd, i) => `
+                <div class="palette-item ${i === selectedIdx ? 'selected' : ''}" onclick="execCommand('${cmd.id}')">
+                    <span>${cmd.label}</span>
+                    <span style="opacity: 0.5; font-family: var(--font-mono); font-size: 11px;">${cmd.hint}</span>
+                </div>
+            `).join('');
+            if (filteredCommands.length === 0) {
+                cpResults.innerHTML = '<div style="color: var(--text-dim); font-size: 14px; padding: 12px;">No commands found.</div>';
+            }
+        }
+
+        cpInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            filteredCommands = commands.filter(cmd => 
+                cmd.label.toLowerCase().includes(query) || 
+                cmd.hint.toLowerCase().includes(query)
+            );
+            selectedIdx = 0;
+            renderPalette();
+        });
+
+        function execCommand(id) {
+            const cmd = commands.find(c => c.id === id);
+            addLog(`> Executing: ${cmd.label}...`, 'var(--brand)');
+            if (id === 'clear') { term.innerHTML = ''; addLog('[SYSTEM] Terminal cleared.'); }
+            if (id === 'pricing') { window.location.href = '#pricing-section'; }
+            cp.style.display = 'none';
+            cpInput.value = '';
+            filteredCommands = [...commands];
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                cp.style.display = cp.style.display === 'block' ? 'none' : 'block';
+                if(cp.style.display === 'block') { 
+                    selectedIdx = 0; 
+                    filteredCommands = [...commands];
+                    renderPalette(); 
+                    cpInput.focus(); 
+                }
+            }
+            if (e.key === 'Escape') { cp.style.display = 'none'; document.getElementById('get-started-modal').style.display = 'none'; }
+            if (cp.style.display === 'block') {
+                if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = (selectedIdx + 1) % Math.max(1, filteredCommands.length); renderPalette(); }
+                if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = (selectedIdx - 1 + filteredCommands.length) % Math.max(1, filteredCommands.length); renderPalette(); }
+                if (e.key === 'Enter' && filteredCommands.length > 0) { execCommand(filteredCommands[selectedIdx].id); }
+            }
+        });
+
+        // Mutation Graph
+        const canvas = document.getElementById('graph-canvas');
+        const ctx = canvas.getContext('2d');
+        const accentColor = '#7170ff'; // Explicitly use var(--accent) hex
+
+        function resize() { 
+            canvas.width = canvas.parentElement.clientWidth; 
+            canvas.height = canvas.parentElement.clientHeight; 
+        }
+        window.addEventListener('resize', resize); 
+        resize();
+
+        let nodes = [];
+        for(let i=0; i<40; i++) {
+            nodes.push({ 
+                x: Math.random()*canvas.width, 
+                y: Math.random()*canvas.height, 
+                vx: (Math.random()-0.5)*0.6, 
+                vy: (Math.random()-0.5)*0.6,
+                size: Math.random() * 2 + 1
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            nodes.forEach((n, i) => {
+                n.x += n.vx; 
+                n.y += n.vy;
+                
+                // Bounce
+                if(n.x<0 || n.x>canvas.width) n.vx*=-1; 
+                if(n.y<0 || n.y>canvas.height) n.vy*=-1;
+                
+                // Draw connections
+                nodes.slice(i+1).forEach(n2 => { 
+                    const dist = Math.hypot(n.x-n2.x, n.y-n2.y);
+                    if(dist < 100) { 
+                        ctx.beginPath(); 
+                        ctx.moveTo(n.x, n.y); 
+                        ctx.lineTo(n2.x, n2.y); 
+                        ctx.strokeStyle = `rgba(113, 112, 255, ${0.2 * (1 - dist/100)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke(); 
+                    } 
+                });
+                
+                // Draw node
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+                ctx.fillStyle = i % 5 === 0 ? accentColor : 'rgba(255,255,255,0.4)';
+                ctx.fill();
+                
+                if (i % 5 === 0) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = accentColor;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Modals
+        function selectPricing(el) { document.querySelectorAll('.price-card').forEach(c => c.classList.remove('active')); el.classList.add('active'); }
+        function openModal() { document.getElementById('get-started-modal').style.display = 'flex'; }
+        function closeModal(e) { if(e.target.id==='get-started-modal') e.target.style.display = 'none'; }
+        function toggleMenu() {
+            const links = document.querySelector('.nav-links');
+            const actions = document.querySelector('.nav-actions');
+            const isVisible = links.style.display === 'flex';
+            
+            if (isVisible) {
+                links.style.display = 'none';
+                actions.style.display = 'none';
+            } else {
+                links.style.display = 'flex';
+                links.style.flexDirection = 'column';
+                links.style.position = 'fixed';
+                links.style.top = '80px';
+                links.style.left = '0';
+                links.style.right = '0';
+                links.style.background = 'var(--bg-glass)';
+                links.style.padding = '40px';
+                links.style.borderBottom = '1px solid var(--border)';
+                actions.style.display = 'flex';
+                actions.style.padding = '0 40px 40px';
+                actions.style.background = 'var(--bg-glass)';
+                actions.style.position = 'fixed';
+                actions.style.top = 'calc(80px + 200px)'; // rough estimate
+                actions.style.left = '0';
+                actions.style.right = '0';
+            }
+        }
+        function handleProvision(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const status = document.getElementById('provision-status');
+            btn.disabled = true; btn.textContent = 'Provisioning Swarm...';
+            status.style.display = 'block'; status.innerHTML = '[INFRA] Allocating compute...';
+            setTimeout(() => status.innerHTML += '<br>[NET] Tunneling private VPC...', 800);
+            setTimeout(() => status.innerHTML += '<br>[NODE] Booting 50 agents...', 1600);
+            setTimeout(() => { status.innerHTML += '<br><span style="color: #00ff00;">[OK] Infrastructure Ready. Check Inbox.</span>'; btn.textContent = 'Complete'; }, 2500);
+        }
+    </script>
+</body>
+</html>

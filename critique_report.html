@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critique · Agent RedTeam Landing Page</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #fbfbfb; color: #1d1d1f; margin: 0; padding: 40px; }
+        .report { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 60px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        header { border-bottom: 1px solid #eee; padding-bottom: 40px; margin-bottom: 40px; }
+        h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0 0 10px 0; }
+        .meta { font-size: 14px; color: #86868b; }
+        .radar-box { text-align: center; margin: 40px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .dimension-card { border: 1px solid #f0f0f0; border-radius: 12px; padding: 24px; background: #fafafa; }
+        .score { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .band { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #5e6ad2; }
+        .evidence { font-size: 14px; line-height: 1.6; color: #424245; margin: 16px 0; }
+        .bullets { font-size: 13px; list-style: none; padding: 0; }
+        .bullets li { margin-bottom: 8px; padding-left: 20px; position: relative; }
+        .bullets li::before { content: "•"; position: absolute; left: 0; color: #ccc; }
+        .bullets li.fix::before { content: "×"; color: #ff3b30; }
+        .bullets li.win::before { content: "→"; color: #34c759; }
+        .action-lists { margin-top: 60px; padding-top: 40px; border-top: 1px solid #eee; }
+        h2 { font-size: 20px; margin-bottom: 20px; }
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <header>
+            <div class="meta">OD · Critique Skill · April 30, 2026</div>
+            <h1>Critique · Agent RedTeam Landing</h1>
+            <div class="meta">Verdict: A high-fidelity "Vibecoded" shell that lacks security-specific architectural authority. Strong bones, generic skin.</div>
+        </header>
+
+        <div class="radar-box">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+                <circle cx="150" cy="150" r="100" fill="none" stroke="#eee" stroke-width="1"/>
+                <circle cx="150" cy="150" r="75" fill="none" stroke="#eee" stroke-width="1"/>
+                <circle cx="150" cy="150" r="50" fill="none" stroke="#eee" stroke-width="1"/>
+                <circle cx="150" cy="150" r="25" fill="none" stroke="#eee" stroke-width="1"/>
+                
+                <line x1="150" y1="50" x2="150" y2="250" stroke="#eee" />
+                <line x1="50" y1="150" x2="250" y2="150" stroke="#eee" />
+                
+                <polygon points="150,80 220,130 200,200 100,210 70,140" fill="rgba(94, 106, 210, 0.2)" stroke="#5e6ad2" stroke-width="2"/>
+                
+                <text x="150" y="40" text-anchor="middle" font-size="10">Philosophy</text>
+                <text x="260" y="155" text-anchor="start" font-size="10">Hierarchy</text>
+                <text x="210" y="260" text-anchor="middle" font-size="10">Detail</text>
+                <text x="90" y="260" text-anchor="middle" font-size="10">Function</text>
+                <text x="40" y="155" text-anchor="end" font-size="10">Innovation</text>
+            </svg>
+        </div>
+
+        <div class="grid">
+            <div class="dimension-card">
+                <div class="score">7 / 10</div>
+                <div class="band">Strong</div>
+                <div class="evidence">Stick to the Linear/Vercel "Frontier" aesthetic is disciplined, but the logo-box and button radii (100px) feel too soft and "SaaS-generic" for a hardened adversarial tool. The philosophy drifts toward "Marketing" rather than "Engineering Authority".</div>
+                <ul class="bullets">
+                    <li class="win">Sharpen button radii from 100px to 6px for technical feel.</li>
+                </ul>
+            </div>
+            <div class="dimension-card">
+                <div class="score">6 / 10</div>
+                <div class="band">Functional</div>
+                <div class="evidence">The terminal-wrap dominates the viewport (height: 480px), effectively drowning out the Hero H1's impact. The relationship between the "Adversarial Engineering" headline and the terminal needs a clear primary/secondary lockup.</div>
+                <li class="fix">Reduce terminal height or move it to a side-car layout to restore H1 dominance.</li>
+            </div>
+            <div class="dimension-card">
+                <div class="score">7 / 10</div>
+                <div class="band">Strong</div>
+                <div class="evidence">The SVG grain and mesh gradients are well-executed. However, the pricing cards reuse the same .card pattern without distinct "Security Tier" visual identifiers. Terminal header buttons are static #222 circles; they need realistic depth.</div>
+                <li class="win">Add :hover states to pricing card border-glows to indicate "Protection Level".</li>
+            </div>
+            <div class="dimension-card">
+                <div class="score">8 / 10</div>
+                <div class="band">Strong</div>
+                <div class="evidence">Cmd+K works, and the terminal simulation is engaging. The responsive transition at 1024px is handled well. The command-palette is currently an empty shell; it needs a results list or typeahead to feel "Functional".</div>
+                <li class="win">Populate Command Palette with 3 dummy results (e.g. "Scan Target", "Evolve Swarm").</li>
+            </div>
+            <div class="dimension-card">
+                <div class="score">6 / 10</div>
+                <div class="band">Functional</div>
+                <div class="evidence">While high-fidelity, this is a standard "Dark SaaS" layout. For an "Evolutionary Swarm" tool, it lacks generative or biological visual cues (e.g. node-graphs, mutation trees). It feels safe, not frontier.</div>
+                <li class="fix">Introduce a "Mutation Map" or "Agent Grid" visual instead of generic icons.</li>
+            </div>
+        </div>
+
+        <div class="action-lists">
+            <div class="action-grid">
+                <div>
+                    <h2>Keep</h2>
+                    <ul class="bullets">
+                        <li>Mesh gradient background for depth</li>
+                        <li>Grain overlay for tactile texture</li>
+                        <li>Inter Display typography stack</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2>Fix</h2>
+                    <ul class="bullets">
+                        <li class="fix">Sharpen radii for technical authority</li>
+                        <li class="fix">Balance H1 vs Terminal scale</li>
+                        <li class="fix">Add Command Palette content</li>
+                    </ul>
+                </div>
+                <div>
+                    <h2>Quick wins</h2>
+                    <ul class="bullets">
+                        <li class="win">Add terminal button depth</li>
+                        <li class="win">Refine price-card differentiation</li>
+                        <li class="win">Add hover mutation effects</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

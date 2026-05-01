@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Critique · Agent RedTeam Landing Page</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #fbfbfb; color: #1d1d1f; margin: 0; padding: 40px; }
+        .report { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 60px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0 0 10px 0; }
+        .radar-box { text-align: center; margin: 40px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .dimension-card { border: 1px solid #f0f0f0; border-radius: 12px; padding: 24px; background: #fafafa; }
+        .score { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .band { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #5e6ad2; }
+        .evidence { font-size: 14px; line-height: 1.6; color: #424245; margin: 16px 0; }
+        .bullets li { margin-bottom: 8px; list-style: none; }
+        .bullets li::before { content: "→"; color: #5e6ad2; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <h1>Critique · Agent RedTeam Landing</h1>
+        <p>Verdict: Professionally executed "Frontier" aesthetic, but the visual complexity (noise overlay) occasionally interferes with readability of the Terminal and Command Palette.</p>
+        
+        <div class="radar-box">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+                <polygon points="150,80 220,130 200,200 100,210 70,140" fill="rgba(94, 106, 210, 0.2)" stroke="#5e6ad2" stroke-width="2"/>
+            </svg>
+        </div>
+
+        <div class="grid">
+            <div class="dimension-card">
+                <div class="score">8 / 10</div>
+                <div class="band">Exceptional</div>
+                <div class="evidence">Philosophy consistency is excellent; the "Frontier Adversarial" tone is maintained throughout, from terminal logs to pricing cards.</div>
+            </div>
+            <div class="dimension-card">
+                <div class="score">7 / 10</div>
+                <div class="band">Strong</div>
+                <div class="evidence">Visual hierarchy is clear. However, the contrast of the command palette text against the background is slightly weak.</div>
+            </div>
+        </div>
+        
+        <h2 style="margin-top:40px;">Action Plan</h2>
+        <ul class="bullets">
+            <li>Increase command palette input text contrast.</li>
+            <li>Optimize noise overlay opacity to reduce terminal text blurring.</li>
+            <li>Add "active" states to swarm nodes in the table to link them to terminal logs.</li>
+        </ul>
+    </div>
+</body>
+</html>
