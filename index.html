@@ -22,21 +22,21 @@
         }
 
         @keyframes noise {
-            0%, 100% { transform: translate(0, 0); }
-            10% { transform: translate(-5%, -5%); }
-            20% { transform: translate(-10%, 5%); }
-            30% { transform: translate(5%, -10%); }
-            40% { transform: translate(-5%, 15%); }
-            50% { transform: translate(-10%, 5%); }
-            60% { transform: translate(15%, 0); }
-            70% { transform: translate(0, 10%); }
-            80% { transform: translate(-15%, 0); }
-            90% { transform: translate(10%, 5%); }
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            10% { transform: translate3d(-1%, -1%, 0); }
+            20% { transform: translate3d(-2%, 1%, 0); }
+            30% { transform: translate3d(1%, -2%, 0); }
+            40% { transform: translate3d(-1%, 2%, 0); }
+            50% { transform: translate3d(-2%, 1%, 0); }
+            60% { transform: translate3d(2%, 0, 0); }
+            70% { transform: translate3d(0, 2%, 0); }
+            80% { transform: translate3d(-2%, 0, 0); }
+            90% { transform: translate3d(1%, 1%, 0); }
         }
 
         @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
+            0% { transform: translate3d(0, -100%, 0); }
+            100% { transform: translate3d(0, 100%, 0); }
         }
 
         * {
@@ -44,6 +44,7 @@
             padding: 0;
             box-sizing: border-box;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
@@ -53,23 +54,27 @@
             line-height: 1.6;
             overflow-x: hidden;
             letter-spacing: -0.01em;
+            text-rendering: optimizeLegibility;
         }
 
         body::before {
             content: "";
             position: fixed;
-            top: -100%; left: -100%; width: 300%; height: 300%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3%3E");
-            opacity: 0.04; pointer-events: none; z-index: 9999;
-            animation: noise 8s steps(10) infinite;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3%3E");
+            opacity: 0.03; pointer-events: none; z-index: 9999;
+            animation: noise 0.5s steps(4) infinite;
+            will-change: transform;
         }
 
         .mesh-bg {
             position: fixed; inset: 0; z-index: -1;
             background: 
-                radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.25), transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(113, 112, 255, 0.1), transparent 40%),
-                radial-gradient(circle at 100% 50%, rgba(94, 106, 210, 0.1), transparent 40%);
+                radial-gradient(circle at 50% -20%, rgba(94, 106, 210, 0.2), transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(113, 112, 255, 0.08), transparent 40%),
+                radial-gradient(circle at 100% 50%, rgba(94, 106, 210, 0.08), transparent 40%);
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
         }
 
         .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
@@ -378,10 +383,19 @@
     </footer>
 
     <script>
+        // Throttled Scroll & Parallax
+        let lastScrollY = 0;
+        let ticking = false;
         window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            document.querySelector('.mesh-bg').style.transform = `translateY(${scrolled * 0.1}px)`;
-        });
+            lastScrollY = window.pageYOffset;
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    document.querySelector('.mesh-bg').style.transform = `translate3d(0, ${lastScrollY * 0.1}px, 0)`;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
 
         // Reveal Logic
         const observer = new IntersectionObserver((entries) => {
@@ -510,63 +524,70 @@
 
         // Mutation Graph
         const canvas = document.getElementById('graph-canvas');
-        const ctx = canvas.getContext('2d');
-        const accentColor = '#7170ff'; // Explicitly use var(--accent) hex
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for non-transparent canvas
+        const accentColor = '#7170ff';
 
         function resize() { 
-            canvas.width = canvas.parentElement.clientWidth; 
-            canvas.height = canvas.parentElement.clientHeight; 
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.parentElement.clientWidth * dpr; 
+            canvas.height = canvas.parentElement.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = `${canvas.parentElement.clientWidth}px`;
+            canvas.style.height = `${canvas.parentElement.clientHeight}px`;
         }
-        window.addEventListener('resize', resize); 
+        window.addEventListener('resize', resize, { passive: true }); 
         resize();
 
         let nodes = [];
-        for(let i=0; i<40; i++) {
+        const nodeCount = window.innerWidth < 768 ? 20 : 40; // Adjust density for mobile
+        for(let i=0; i < nodeCount; i++) {
             nodes.push({ 
-                x: Math.random()*canvas.width, 
-                y: Math.random()*canvas.height, 
-                vx: (Math.random()-0.5)*0.6, 
-                vy: (Math.random()-0.5)*0.6,
-                size: Math.random() * 2 + 1
+                x: Math.random() * (canvas.width / (window.devicePixelRatio || 1)), 
+                y: Math.random() * (canvas.height / (window.devicePixelRatio || 1)), 
+                vx: (Math.random()-0.5)*0.5, 
+                vy: (Math.random()-0.5)*0.5,
+                size: Math.random() * 1.5 + 1
             });
         }
 
+        let isVisible = true;
+        document.addEventListener('visibilitychange', () => { isVisible = !document.hidden; });
+
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!isVisible) { requestAnimationFrame(animate); return; }
             
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+
             nodes.forEach((n, i) => {
                 n.x += n.vx; 
                 n.y += n.vy;
                 
-                // Bounce
-                if(n.x<0 || n.x>canvas.width) n.vx*=-1; 
-                if(n.y<0 || n.y>canvas.height) n.vy*=-1;
+                if(n.x<0 || n.x > width) n.vx*=-1; 
+                if(n.y<0 || n.y > height) n.vy*=-1;
                 
-                // Draw connections
                 nodes.slice(i+1).forEach(n2 => { 
-                    const dist = Math.hypot(n.x-n2.x, n.y-n2.y);
-                    if(dist < 100) { 
+                    const dx = n.x - n2.x;
+                    const dy = n.y - n2.y;
+                    const distSq = dx*dx + dy*dy; // Use squared distance to avoid Math.sqrt
+                    if(distSq < 10000) { // 100^2
+                        const opacity = 0.15 * (1 - Math.sqrt(distSq)/100);
                         ctx.beginPath(); 
                         ctx.moveTo(n.x, n.y); 
                         ctx.lineTo(n2.x, n2.y); 
-                        ctx.strokeStyle = `rgba(113, 112, 255, ${0.2 * (1 - dist/100)})`;
+                        ctx.strokeStyle = `rgba(113, 112, 255, ${opacity})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke(); 
                     } 
                 });
                 
-                // Draw node
                 ctx.beginPath();
                 ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
-                ctx.fillStyle = i % 5 === 0 ? accentColor : 'rgba(255,255,255,0.4)';
+                ctx.fillStyle = i % 8 === 0 ? accentColor : 'rgba(255,255,255,0.3)';
                 ctx.fill();
-                
-                if (i % 5 === 0) {
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = accentColor;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
             });
             requestAnimationFrame(animate);
         }
